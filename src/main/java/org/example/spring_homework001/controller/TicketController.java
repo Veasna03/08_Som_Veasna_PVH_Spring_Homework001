@@ -4,6 +4,7 @@ import org.example.spring_homework001.entity.RequestTicket;
 import org.example.spring_homework001.entity.Ticket;
 import org.example.spring_homework001.entity.TicketStatus;
 import org.example.spring_homework001.response.ApiResponse;
+import org.example.spring_homework001.response.FoundResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1")
+@RequestMapping("/api/v1/tickets")
 public class TicketController {
 
     List<Ticket> tickets=new ArrayList<>();
@@ -46,7 +47,7 @@ public class TicketController {
     }
   //get by id
 
-    @GetMapping("/tickets/{ticket-id}")
+    @GetMapping("/{ticket-id}")
     public ResponseEntity<?> getTicketByID(@PathVariable("ticket-id") int idTicket) {
         for (Ticket ticket : tickets) {
             if (ticket.getTicketId() == idTicket) {
@@ -60,55 +61,79 @@ public class TicketController {
                 return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
             }
         }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                .body(new ApiResponse<>(
-                        false,
-                        "Ticket not found",
-                        HttpStatus.NOT_FOUND,
-                        null,
-                        LocalDateTime.now()
-                ));
+        FoundResponse notFountResponse=new FoundResponse(false,"No Ticket found with Id:"+idTicket,HttpStatus.NOT_FOUND, LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(notFountResponse);
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<?> searchTicketsByType(@RequestParam TicketStatus ticketStatus, @RequestParam String name) {
+    public ResponseEntity<?> searchTicketsByType(@RequestParam TicketStatus ticketStatus, @RequestParam String travelDate) {
         for (Ticket ticket : tickets) {
-            if (ticket.getPassengerName().equals(name) && ticket.getTicketStatus().equals(ticketStatus.toString())) {
-                ApiResponse<Ticket> apiResponse = new ApiResponse<>(true, "Successfully retrieved ticket", HttpStatus.OK, ticket, LocalDateTime.now());
+            if (ticket.getTravelDate().equals(travelDate) && ticket.getTicketStatus().equals(ticketStatus.toString())) {
+                ApiResponse<Ticket> apiResponse = new ApiResponse<>(true, "string",HttpStatus.CONTINUE, ticket, LocalDateTime.now());
                 return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
             }
+
         }
-        return null;
+        ApiResponse<Ticket> notfound=new ApiResponse<>(true,"Ticket filtered successfully",HttpStatus.OK,null,LocalDateTime.now());
+
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(notfound);
     }
-    @DeleteMapping("/tickets/{ticket-id}")
+    @DeleteMapping("/{ticket-id}")
     public ResponseEntity<?> deleteTicket(@PathVariable("ticket-id") int idTicket) {
         for (Ticket ticket : tickets) {
             if (ticket.getTicketId() == idTicket) {
                 tickets.remove(ticket);
-                ApiResponse<Ticket> apiResponse = new ApiResponse<>(true,"Successfully deleted ticket", HttpStatus.OK, ticket, LocalDateTime.now());
-                return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+                FoundResponse foundResponse=new FoundResponse(true,"Ticket deleted successfully", HttpStatus.OK,LocalDateTime.now());
+                return ResponseEntity.status(HttpStatus.OK).body(foundResponse);
             }
         }
-        return null;
+        FoundResponse notfound=new FoundResponse(false,"No ticket found with ID:"+idTicket, HttpStatus.NOT_FOUND, LocalDateTime.now());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(notfound);
     }
     @GetMapping("/search")
     public ResponseEntity<?> searchTickets(@RequestParam String passengerName) {
         List<Ticket> storeTicket = new ArrayList<>();
+
         for (Ticket ticket : tickets) {
-            if (ticket.getPassengerName().toLowerCase().contains(passengerName.toLowerCase())) {
+            if (ticket.getPassengerName().equals(passengerName)) {
                 storeTicket.add(ticket);
-                ApiResponse<List<Ticket>> apiResponse=new ApiResponse<>(true,"Successfully ",HttpStatus.OK,storeTicket,LocalDateTime.now());
-                return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
             }
         }
 
-        return null;
+        if (!storeTicket.isEmpty()) {
+            ApiResponse<List<Ticket>> apiResponse = new ApiResponse<>(
+                    true, "Ticket search successfully", HttpStatus.OK, storeTicket, LocalDateTime.now()
+            );
+            return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+        } else {
+            FoundResponse notFoundResponse = new FoundResponse(
+                    false, "No ticket found with name: " + passengerName, HttpStatus.NOT_FOUND, LocalDateTime.now()
+            );
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(notFoundResponse);
+        }
+    }
 
+    @GetMapping("/")
+    public ResponseEntity<?> getAllTickets(
+            @RequestParam(defaultValue = "0") int offset,
+            @RequestParam(defaultValue = "5") int limit) {
+
+        // Handle invalid offset values
+        if (offset < 0 || limit <= 0) {
+            return ResponseEntity.badRequest().body("Offset must be >= 0 and limit must be > 0");
+        }
+
+        int start = Math.min(offset, tickets.size());
+        int end = Math.min(start + limit, tickets.size());
+
+        List<Ticket> paginatedTickets = tickets.subList(start, end);
+
+        ApiResponse<List<Ticket>> response = new ApiResponse<>(
+                true, "Tickets retrieved successfully", HttpStatus.OK, paginatedTickets, LocalDateTime.now());
+
+        return ResponseEntity.ok(response);
     }
-    @GetMapping("/tickets")
-    public ResponseEntity<?> getAllTickets() {
-        return new ResponseEntity<>(new ApiResponse<List<Ticket>>(true, "Success", HttpStatus.OK, tickets, LocalDateTime.now()), HttpStatus.OK);
-    }
+
 
     @PutMapping("/{ticket-id}")
     public ResponseEntity<?> updateTicket(@PathVariable("ticket-id") Integer id, @RequestBody RequestTicket requestTicket) {
