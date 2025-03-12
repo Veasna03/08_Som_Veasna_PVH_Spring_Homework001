@@ -15,10 +15,10 @@ public class Ticket {
     private double price;
     private Boolean paymentStatus;
     private String ticketStatus;
-    private int seatNumber;
+    private String seatNumber;
     private static int countId = 0;
 
-    public Ticket(String passengerName, String travelDate, String sourceStation, String destinationStation, double price, Boolean paymentStatus, String ticketStatus, int seatNumber) {
+    public Ticket(String passengerName, String travelDate, String sourceStation, String destinationStation, double price, Boolean paymentStatus, String ticketStatus, String seatNumber) {
         this.ticketId = ++countId;
         this.passengerName = passengerName;
         this.travelDate = travelDate;

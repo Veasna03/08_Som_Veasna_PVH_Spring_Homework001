@@ -17,8 +17,16 @@ import java.util.List;
 public class TicketController {
 
     List<Ticket> tickets=new ArrayList<>();
+    public TicketController() {
+        tickets.add(
+                new Ticket("Kok dara", "20-02-2022", "PP", "TK", 200d, true, "BOOKED", "100B")
+        );
+        tickets.add(
+                new Ticket("Kok Bona", "20-02-2023", "PP", "PVH", 200d, false, "BOOKED", "120B")
+        );
+    }
 
-    @PostMapping("/tickets")
+    @PostMapping("")
     public ResponseEntity<?> addTicket(@RequestBody RequestTicket requestTicket) {
         Ticket newTicket = new Ticket(
                 requestTicket.getPassengerName(),
@@ -38,8 +46,8 @@ public class TicketController {
     }
   //get by id
 
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getTicketByID(@PathVariable("id") int idTicket) {
+    @GetMapping("/tickets/{ticket-id}")
+    public ResponseEntity<?> getTicketByID(@PathVariable("ticket-id") int idTicket) {
         for (Ticket ticket : tickets) {
             if (ticket.getTicketId() == idTicket) {
                 ApiResponse<Ticket> apiResponse = new ApiResponse<>(
@@ -83,6 +91,49 @@ public class TicketController {
         }
         return null;
     }
+    @GetMapping("/search")
+    public ResponseEntity<?> searchTickets(@RequestParam String passengerName) {
+        List<Ticket> storeTicket = new ArrayList<>();
+        for (Ticket ticket : tickets) {
+            if (ticket.getPassengerName().toLowerCase().contains(passengerName.toLowerCase())) {
+                storeTicket.add(ticket);
+                ApiResponse<List<Ticket>> apiResponse=new ApiResponse<>(true,"Successfully ",HttpStatus.OK,storeTicket,LocalDateTime.now());
+                return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+            }
+        }
+
+        return null;
+
+    }
+    @GetMapping("/tickets")
+    public ResponseEntity<?> getAllTickets() {
+        return new ResponseEntity<>(new ApiResponse<List<Ticket>>(true, "Success", HttpStatus.OK, tickets, LocalDateTime.now()), HttpStatus.OK);
+    }
+
+    @PutMapping("/{ticket-id}")
+    public ResponseEntity<?> updateTicket(@PathVariable("ticket-id") Integer id, @RequestBody RequestTicket requestTicket) {
+        for (Ticket ticket : tickets) {
+            if (ticket.getTicketId() == id) {
+                ticket.setPassengerName(requestTicket.getPassengerName());
+                ticket.setTicketStatus(requestTicket.getTicketStatus());
+                ticket.setSeatNumber(requestTicket.getSeatNumber());
+                ticket.setTravelDate(requestTicket.getTravelDate());
+                ticket.setSourceStation(requestTicket.getSourceStation());
+                ticket.setDestinationStation(requestTicket.getDestinationStation());
+                ticket.setPrice(requestTicket.getPrice());
+                ticket.setPaymentStatus(requestTicket.getPaymentStatus());
+                ticket.setTicketStatus(requestTicket.getTicketStatus());
+                ticket.setSeatNumber(requestTicket.getSeatNumber());
+                ApiResponse<Ticket> apiResponse=new ApiResponse<>(true,"Successfully ",HttpStatus.OK,ticket,LocalDateTime.now());
+                return ResponseEntity.status(HttpStatus.OK).body(apiResponse);
+
+
+            }
+        }
+        return null;
+    }
+
+
 
 
 
